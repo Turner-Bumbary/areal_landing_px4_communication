@@ -22,10 +22,12 @@ from rclpy.node import Node
 from px4_msgs.msg import TimesyncStatus
 from px4_msgs.msg import VehicleOdometry
 
+from geometry_msgs.msg import Point
 from vicon_receiver.msg import Position
 from rclpy.qos import qos_profile_sensor_data
 
-from numpy import NaN
+import numpy as np
+from numpy import nan as NaN
 
 # Pubsub node class definition
 class MoCapPubSub(Node):
@@ -36,7 +38,7 @@ class MoCapPubSub(Node):
 
         # Initialize subscriber to mocap(VICON) topic
         self.mocap_sub = self.create_subscription(Position, 
-            '/vicon/Brian_X500/Brian_X500', self.mocap_callback, 10)
+            '/vicon/Turner_X500/Turner_X500', self.mocap_callback, 10)
 
         # Initialize subscriber to PX4 timesync topic
         self.timesync_sub = self.create_subscription(TimesyncStatus, 
@@ -46,6 +48,9 @@ class MoCapPubSub(Node):
         # Initialize publisher to PX4 vehicle_visual_odometry topic
         self.mocap_pub = self.create_publisher(VehicleOdometry, 
             '/fmu/in/vehicle_visual_odometry', 10)
+
+        self.moccap_position_pub = self.create_publisher(Point, 
+            '/position', 10)
 
         self.get_logger().info("PX4 mocap pub-sub node initialized")
 
@@ -59,11 +64,13 @@ class MoCapPubSub(Node):
         msg_px4.timestamp_sample = self.timesync # Timestamp for mocap sample
 
         # Transfer data from mocap message to PX4 message
-        # VICON Front, Left, Up to PX4 Front, Right, Down
+        # VICON East, North, Up to PX4 Front, Right, Down
         # Position/orientation components
         msg_px4.pose_frame = 2 # FRD from px4 message
-        msg_px4.position = [msg.x_trans/1000.0, -msg.y_trans/1000.0, -msg.z_trans/1000.0]
-        msg_px4.q = [msg.w, msg.x_rot, -msg.y_rot, -msg.z_rot]
+        enu_coordinates = np.array([msg.x/1000, msg.y/1000, msg.z/1000])
+        frd_coordinats = [enu_coordinates[1], enu_coordinates[0], -enu_coordinates[2]] 
+        msg_px4.position = frd_coordinats
+        msg_px4.q = [msg.w, msg.x_rot, msg.y_rot, msg.z_rot]
         
         # Velocity components (unknown)
         msg_px4.velocity_frame = 2 # FRD from px4 message
@@ -76,7 +83,14 @@ class MoCapPubSub(Node):
         msg_px4.velocity_variance = [0.0, 0.0, 0.0]
 
         self.mocap_pub.publish(msg_px4) # Publish to PX4
-
+        
+        position = Point()
+        position.x = msg.x_trans/1000.0
+        position.y = msg.y_trans/1000.0
+        position.z = msg.z_trans/1000.0
+        
+        self.moccap_position_pub.publish(position)
+        
     # Callback to keep timestamp for synchronization purposes
     def timesync_callback(self, msg):
 
