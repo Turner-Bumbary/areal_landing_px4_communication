@@ -67,7 +67,7 @@ class MoCapPubSub(Node):
         # VICON East, North, Up to PX4 Front, Right, Down
         # Position/orientation components
         msg_px4.pose_frame = 2 # FRD from px4 message
-        enu_coordinates = np.array([msg.x/1000, msg.y/1000, msg.z/1000])
+        enu_coordinates = [msg.x_trans/1000, msg.y_trans/1000, msg.z_trans/1000]
         frd_coordinats = [enu_coordinates[1], enu_coordinates[0], -enu_coordinates[2]] 
         msg_px4.position = frd_coordinats
         msg_px4.q = [msg.w, msg.x_rot, msg.y_rot, msg.z_rot]
