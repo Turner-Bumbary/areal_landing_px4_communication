@@ -30,6 +30,7 @@ setup(
             'px4_pos_set_move_act = areal_landing_px4_communication.action_px4_position_setpoint_move:main',
             'px4_mocap_pubsub = areal_landing_px4_communication.px4_vicon_pubsub:main',
             'pose_visualization = areal_landing_px4_communication.pose_visualization:main',
+            'vicon_transmitter = areal_landing_px4_communication.vicon_transmitter:main',
         ],
     },
 )
